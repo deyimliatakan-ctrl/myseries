@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="tr" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MySeries - Dizi Takipçisi</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- FontAwesome (İkonlar) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        zinc: {
+                            900: '#18181b',
+                            950: '#09090b',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #09090b; /* zinc-950 */
+            color: #f4f4f5; /* zinc-100 */
+        }
+        
+        /* Özel Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #18181b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #3f3f46; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #52525b; 
+        }
+
+        /* Range Slider Özelleştirmesi */
+        input[type=range] {
+            -webkit-appearance: none;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #22c55e;
+            cursor: pointer;
+            margin-top: -6px;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #3f3f46;
+            border-radius: 2px;
+        }
+        
+        /* Puanlama Yıldızı Range Slider */
+        .rating-slider::-webkit-slider-thumb {
+            background: #eab308; /* yellow-500 */
+        }
+
+        .loader {
+            border: 3px solid #27272a;
+            border-radius: 50%;
+            border-top: 3px solid #22c55e;
+            width: 24px;
+            height: 24px;
+            -webkit-animation: spin 1s linear infinite;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .poster-container:hover .poster-overlay {
+            opacity: 1;
+        }
+        
+        /* Toast Mesajı Animasyonu */
+        @keyframes slideInUp {
+            from { transform: translateY(100%); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .toast-animate {
+            animation: slideInUp 0.3s ease-out forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Üst Bar & Başlık -->
+    <header class="pt-10 pb-6 text-center px-4">
+        <h1 class="text-4xl font-bold tracking-tight text-white mb-2 flex items-center justify-center gap-3">
+            <i class="fa-solid fa-tv text-green-500"></i> MySeries
+        </h1>
+        <p class="text-zinc-400 text-sm mb-6">İzlediğin dizileri takip et, bölümleri puanla.</p>
+        
+        <button onclick="showAddModal()" class="bg-green-500 hover:bg-green-600 text-black font-semibold py-2.5 px-6 rounded-full transition-all transform hover:scale-105 shadow-[0_0_15px_rgba(34,197,94,0.3)] flex items-center gap-2 mx-auto">
+            <i class="fa-solid fa-plus"></i> Yeni Dizi Ekle
+        </button>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        
+        <!-- İstatistikler -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-zinc-800 flex items-center justify-center text-zinc-300">
+                    <i class="fa-solid fa-layer-group text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-zinc-400 uppercase font-semibold">Toplam Dizi</p>
+                    <p class="text-2xl font-bold text-white" id="stat-total">0</p>
+                </div>
+            </div>
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-blue-900/20 text-blue-400 flex items-center justify-center">
+                    <i class="fa-solid fa-play text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-zinc-400 uppercase font-semibold">İzleniyor</p>
+                    <p class="text-2xl font-bold text-white" id="stat-watching">0</p>
+                </div>
+            </div>
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-green-900/20 text-green-500 flex items-center justify-center">
+                    <i class="fa-solid fa-check text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-zinc-400 uppercase font-semibold">Bitenler</p>
+                    <p class="text-2xl font-bold text-white" id="stat-completed">0</p>
+                </div>
+            </div>
+            <div class="bg-zinc-900 border border-zinc-800 p-4 rounded-2xl flex items-center gap-4">
+                <div class="w-12 h-12 rounded-full bg-purple-900/20 text-purple-400 flex items-center justify-center">
+                    <i class="fa-solid fa-film text-xl"></i>
+                </div>
+                <div>
+                    <p class="text-xs text-zinc-400 uppercase font-semibold">İzlenen Bölüm</p>
+                    <p class="text-2xl font-bold text-white" id="stat-episodes">0</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtreler ve Sıralama -->
+        <div class="flex flex-col sm:flex-row justify-between items-center gap-4 mb-6 border-b border-zinc-800 pb-4">
+            <div class="flex space-x-1 bg-zinc-900 p-1 rounded-xl" id="filter-tabs">
+                <button onclick="setFilter('all', this)" class="px-4 py-2 rounded-lg text-sm font-medium bg-zinc-800 text-white transition-colors">Tümü</button>
+                <button onclick="setFilter('watching', this)" class="px-4 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition-colors">İzleniyor</button>
+                <button onclick="setFilter('plan', this)" class="px-4 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition-colors">İzlenecek</button>
+                <button onclick="setFilter('completed', this)" class="px-4 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition-colors">Bitenler</button>
+            </div>
+            
+            <div class="flex items-center gap-2">
+                <label class="text-sm text-zinc-400"><i class="fa-solid fa-arrow-down-a-z mr-1"></i>Sırala:</label>
+                <select id="sort-select" onchange="renderSeries()" class="bg-zinc-900 border border-zinc-700 text-white text-sm rounded-lg block p-2 outline-none focus:border-green-500">
+                    <option value="newest">En Yeni Eklenenler</option>
+                    <option value="oldest">En Eski Eklenenler</option>
+                    <option value="rating_high">Puan (En Yüksek)</option>
+                    <option value="rating_low">Puan (En Düşük)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Dizi Grid -->
+        <div id="series-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            <!-- Diziler buraya JS ile yüklenecek -->
+        </div>
+
+        <!-- Boş Durum -->
+        <div id="empty-state" class="hidden text-center py-20">
+            <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-zinc-900 mb-4 text-zinc-600">
+                <i class="fa-solid fa-ghost text-4xl"></i>
+            </div>
+            <h3 class="text-lg font-medium text-white mb-2">Burası şimdilik çok sessiz...</h3>
+            <p class="text-zinc-400 mb-6 max-w-sm mx-auto">Henüz hiç dizi eklemedin. Yeni bir dizi ekleyerek takip etmeye başla.</p>
+        </div>
+
+    </main>
+
+    <!-- Dizi Ekleme/Düzenleme Modalı -->
+    <div id="add-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4 overflow-y-auto">
+        <div class="bg-zinc-900 rounded-2xl w-full max-w-md shadow-2xl border border-zinc-800 my-8">
+            <div class="p-6 border-b border-zinc-800 flex justify-between items-center">
+                <h2 id="modal-title" class="text-xl font-semibold text-white">Yeni Dizi Ekle</h2>
+                <button onclick="closeAddModal()" class="text-zinc-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="p-6 space-y-4">
+                <input type="hidden" id="edit-id">
+                
+                <div>
+                    <label class="block text-sm font-medium text-zinc-300 mb-1">Dizi Ara</label>
+                    <div class="relative">
+                        <input type="text" id="series-search" oninput="searchTVMaze()" placeholder="Dizi adını yazmaya başla..." 
+                            class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-3 text-white placeholder-zinc-600 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500">
+                        <div id="search-loader" class="absolute right-4 top-3.5 hidden">
+                            <div class="loader w-5 h-5"></div>
+                        </div>
+                    </div>
+                    <!-- Arama Sonuçları -->
+                    <div id="search-results" class="hidden absolute z-10 w-full mt-1 bg-zinc-800 border border-zinc-700 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        <!-- Sonuçlar buraya gelecek -->
+                    </div>
+                </div>
+
+                <div class="flex gap-4">
+                    <div class="w-1/3 shrink-0">
+                        <div id="poster-preview" class="w-full aspect-[2/3] bg-zinc-950 rounded-xl border border-zinc-800 flex items-center justify-center overflow-hidden">
+                            <i class="fa-solid fa-image text-zinc-700 text-3xl"></i>
+                        </div>
+                    </div>
+                    <div class="w-2/3 space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-300 mb-1">Seçilen Dizi</label>
+                            <input type="text" id="series-name" readonly class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2 text-white opacity-70">
+                            <input type="hidden" id="series-poster">
+                            <input type="hidden" id="tvmaze-id">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-300 mb-1">Durum</label>
+                            <select id="series-status" class="w-full bg-zinc-950 border border-zinc-700 rounded-xl px-4 py-2 text-white focus:outline-none focus:border-green-500">
+                                <option value="watching">İzleniyor</option>
+                                <option value="plan">İzlenecek</option>
+                                <option value="completed">Bitti</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-zinc-300 mb-1">Puanın (10 üzerinden)</label>
+                            <div class="flex items-center gap-3">
+                                <input type="range" id="series-rating" min="0" max="10" step="0.5" value="0" oninput="document.getElementById('rating-val').innerText = this.value" class="w-full">
+                                <span id="rating-val" class="text-white font-bold w-6 text-center text-sm">0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="episodes-info" class="text-xs text-zinc-400 bg-zinc-950 p-3 rounded-lg border border-zinc-800 hidden">
+                    <i class="fa-solid fa-info-circle mr-1"></i> Bu dizinin bölümleri TVMaze'den otomatik çekilecektir.
+                </div>
+            </div>
+            
+            <div class="p-6 border-t border-zinc-800 flex justify-end gap-3">
+                <button onclick="closeAddModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-zinc-400 hover:text-white transition-colors">İptal</button>
+                <button onclick="saveSeriesFromForm()" class="bg-green-500 hover:bg-green-600 text-black px-6 py-2 rounded-xl text-sm font-semibold transition-colors flex items-center gap-2">
+                    <i class="fa-solid fa-check"></i> Kaydet
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bölümler Modalı -->
+    <div id="episodes-modal" class="fixed inset-0 bg-black/90 backdrop-blur-sm hidden items-center justify-center z-50 p-4 sm:p-6">
+        <div class="bg-zinc-950 rounded-2xl w-full max-w-3xl shadow-2xl border border-zinc-800 h-[85vh] flex flex-col">
+            <div class="p-4 sm:p-6 border-b border-zinc-800 flex justify-between items-center bg-zinc-900 rounded-t-2xl">
+                <div>
+                    <h2 id="episodes-modal-title" class="text-xl font-bold text-white flex items-center gap-2">
+                        Dizi Adı
+                    </h2>
+                    <p class="text-zinc-400 text-sm mt-1">Bölümleri izlendi olarak işaretle</p>
+                </div>
+                <button onclick="closeEpisodesModal()" class="text-zinc-400 hover:text-white transition-colors bg-zinc-800 w-8 h-8 rounded-full flex items-center justify-center">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div id="episodes-list-container" class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
+                <!-- Sezonlar ve bölümler JS ile buraya gelecek -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-[60] flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        // --- Uygulama State (Durum) ---
+        let seriesList = JSON.parse(localStorage.getItem('mySeriesList')) || [];
+        let currentFilter = 'all';
+        let searchTimeout = null;
+        let selectedTVMazeData = null; // Arama sonucundan seçilen geçici veri
+        let currentlyManagingSeriesId = null;
+
+        // Sayfa yüklendiğinde
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSeries();
+        });
+
+        // --- Yardımcı Fonksiyonlar ---
+        function generateId() {
+            return Date.now().toString(36) + Math.random().toString(36).substr(2);
+        }
+
+        function saveToStorage() {
+            localStorage.setItem('mySeriesList', JSON.stringify(seriesList));
+            updateStats();
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const colors = type === 'success' ? 'bg-green-900/90 border-green-500 text-green-100' : 
+                           type === 'error' ? 'bg-red-900/90 border-red-500 text-red-100' : 
+                           'bg-blue-900/90 border-blue-500 text-blue-100';
+            const icon = type === 'success' ? 'fa-check-circle' : 
+                         type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+
+            toast.className = `flex items-center gap-2 px-4 py-3 rounded-xl border shadow-xl backdrop-blur-md toast-animate pointer-events-auto ${colors}`;
+            toast.innerHTML = `<i class="fa-solid ${icon}"></i> <span class="text-sm font-medium">${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateY(100%)';
+                toast.style.transition = 'all 0.3s ease-in';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- Tarih İşlemleri (Çıkış Tarihi ve Geri Sayım) ---
+        function formatAirDate(dateString) {
+            if (!dateString) return { text: "Tarih bilinmiyor", isFuture: false, daysLeft: 0 };
+            
+            const airDate = new Date(dateString);
+            const today = new Date();
+            today.setHours(0,0,0,0); // Sadece gün bazında karşılaştırma için
+            
+            const diffTime = airDate - today;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            const options = { day: 'numeric', month: 'short', year: 'numeric' };
+            const formatted = airDate.toLocaleDateString('tr-TR', options);
+
+            if (diffDays > 0) {
+                return { text: `${formatted} (${diffDays} gün sonra)`, isFuture: true, daysLeft: diffDays };
+            } else if (diffDays === 0) {
+                return { text: "Bugün Yayınlanıyor", isFuture: false, daysLeft: 0 };
+            } else {
+                return { text: formatted, isFuture: false, daysLeft: diffDays };
+            }
+        }
+
+        function getNextEpisodeInfo(episodes) {
+            if (!episodes || episodes.length === 0) return null;
+            
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            // Gelecekteki bölümleri bul
+            const futureEpisodes = episodes.filter(ep => {
+                if (!ep.airstamp) return false;
+                const epDate = new Date(ep.airstamp);
+                return epDate >= today;
+            });
+            
+            if (futureEpisodes.length === 0) return null;
+            
+            // Tarihe göre sırala ve en yakın olanı al
+            futureEpisodes.sort((a, b) => new Date(a.airstamp) - new Date(b.airstamp));
+            const nextEp = futureEpisodes[0];
+            
+            const airDateInfo = formatAirDate(nextEp.airstamp);
+            return {
+                season: nextEp.season,
+                number: nextEp.number,
+                daysLeft: airDateInfo.daysLeft
+            };
+        }
+
+        // --- UI Güncellemeleri ---
+        function updateStats() {
+            let total = seriesList.length;
+            let watching = seriesList.filter(s => s.status === 'watching').length;
+            let completed = seriesList.filter(s => s.status === 'completed').length;
+            
+            let totalWatchedEps = 0;
+            seriesList.forEach(series => {
+                if(series.episodes) {
+                    totalWatchedEps += series.episodes.filter(e => e.watched).length;
+                }
+            });
+
+            document.getElementById('stat-total').innerText = total;
+            document.getElementById('stat-watching').innerText = watching;
+            document.getElementById('stat-completed').innerText = completed;
+            document.getElementById('stat-episodes').innerText = totalWatchedEps;
+        }
+
+        function setFilter(filter, btnElement) {
+            currentFilter = filter;
+            
+            // Buton stillerini güncelle
+            const buttons = document.getElementById('filter-tabs').querySelectorAll('button');
+            buttons.forEach(btn => {
+                btn.className = 'px-4 py-2 rounded-lg text-sm font-medium text-zinc-400 hover:text-white transition-colors';
+            });
+            btnElement.className = 'px-4 py-2 rounded-lg text-sm font-medium bg-zinc-800 text-white transition-colors';
+            
+            renderSeries();
+        }
+
+        function renderSeries() {
+            const grid = document.getElementById('series-grid');
+            const emptyState = document.getElementById('empty-state');
+            const sortMethod = document.getElementById('sort-select').value;
+            grid.innerHTML = '';
+
+            let filteredList = seriesList;
+            if (currentFilter !== 'all') {
+                filteredList = seriesList.filter(s => s.status === currentFilter);
+            }
+
+            // Sıralama
+            filteredList.sort((a, b) => {
+                if (sortMethod === 'newest') return (b.createdAt || 0) - (a.createdAt || 0);
+                if (sortMethod === 'oldest') return (a.createdAt || 0) - (b.createdAt || 0);
+                if (sortMethod === 'rating_high') return (b.rating || 0) - (a.rating || 0);
+                if (sortMethod === 'rating_low') return (a.rating || 0) - (b.rating || 0);
+                return 0;
+            });
+
+            if (filteredList.length === 0) {
+                emptyState.classList.remove('hidden');
+                grid.classList.add('hidden');
+            } else {
+                emptyState.classList.add('hidden');
+                grid.classList.remove('hidden');
+
+                filteredList.forEach(series => {
+                    // Hesaplamalar
+                    const totalEps = series.episodes ? series.episodes.length : 0;
+                    
+                    // Sadece çıkmış olan bölümleri say
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    let availableEpsCount = 0;
+                    if(series.episodes) {
+                         availableEpsCount = series.episodes.filter(ep => {
+                            if(!ep.airstamp) return true; // Tarihi yoksa say
+                            return new Date(ep.airstamp) <= today;
+                        }).length;
+                    }
+
+                    const watchedEps = series.episodes ? series.episodes.filter(e => e.watched).length : 0;
+                    let progress = 0;
+                    if (availableEpsCount > 0) {
+                         // İlerlemeyi çıkan bölümler üzerinden hesapla
+                         progress = Math.min(100, Math.round((watchedEps / availableEpsCount) * 100));
+                    } else if(totalEps > 0) {
+                         progress = Math.round((watchedEps / totalEps) * 100);
+                    }
+                    
+                    if (series.status === 'completed') progress = 100;
+
+                    const statusColors = {
+                        'watching': 'text-blue-400 bg-blue-900/20 border-blue-900/50',
+                        'plan': 'text-zinc-400 bg-zinc-800 border-zinc-700',
+                        'completed': 'text-green-500 bg-green-900/20 border-green-900/50'
+                    };
+                    const statusLabels = {
+                        'watching': 'İzleniyor',
+                        'plan': 'İzlenecek',
+                        'completed': 'Bitti'
+                    };
+
+                    const nextEp = getNextEpisodeInfo(series.episodes);
+                    let nextEpBadge = '';
+                    if (nextEp && series.status !== 'completed') {
+                        let text = nextEp.daysLeft === 0 ? 'Bugün Yeni Bölüm!' : `${nextEp.daysLeft} gün sonra yeni bölüm`;
+                        nextEpBadge = `<div class="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-lg z-10 animate-pulse border border-blue-400">
+                            ${text}
+                        </div>`;
+                    }
+
+                    const ratingHtml = series.rating > 0 ? 
+                        `<div class="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-md text-yellow-500 text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border border-zinc-700 shadow-lg">
+                            <i class="fa-solid fa-star"></i> ${series.rating}
+                        </div>` : '';
+
+                    const card = document.createElement('div');
+                    card.className = 'bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 transition-all hover:border-zinc-700 hover:shadow-xl hover:shadow-zinc-900/50 flex flex-col group relative';
+                    
+                    card.innerHTML = `
+                        ${nextEpBadge}
+                        <div class="relative aspect-[2/3] w-full bg-zinc-950 poster-container">
+                            ${series.poster ? 
+                                `<img src="${series.poster}" alt="${series.name}" class="w-full h-full object-cover">` : 
+                                `<div class="w-full h-full flex flex-col items-center justify-center text-zinc-700">
+                                    <i class="fa-solid fa-image text-3xl mb-2"></i>
+                                    <span class="text-xs">Afiş Yok</span>
+                                </div>`
+                            }
+                            ${ratingHtml}
+                            
+                            <!-- Hover Overlay -->
+                            <div class="poster-overlay absolute inset-0 bg-black/70 opacity-0 transition-opacity duration-300 flex flex-col items-center justify-center gap-2 p-4">
+                                <button onclick="openEpisodesModal('${series.id}')" class="w-full bg-green-500 hover:bg-green-400 text-black text-sm font-semibold py-2 rounded-lg transition-colors">
+                                    <i class="fa-solid fa-list-ul mr-1"></i> Bölümler
+                                </button>
+                                <button onclick="editSeries('${series.id}')" class="w-full bg-zinc-800 hover:bg-zinc-700 text-white text-sm font-semibold py-2 rounded-lg border border-zinc-700 transition-colors">
+                                    Düzenle
+                                </button>
+                                <button onclick="deleteSeries('${series.id}')" class="w-full text-red-400 hover:text-red-300 hover:bg-red-950/50 text-sm font-semibold py-2 rounded-lg transition-colors mt-2">
+                                    Sil
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="p-3 flex-1 flex flex-col">
+                            <h3 class="font-bold text-white text-sm line-clamp-1 mb-1" title="${series.name}">${series.name}</h3>
+                            
+                            <div class="flex items-center justify-between mb-3 mt-auto">
+                                <span class="text-[10px] font-medium px-2 py-0.5 rounded border ${statusColors[series.status]}">
+                                    ${statusLabels[series.status]}
+                                </span>
+                            </div>
+                            
+                            <!-- İlerleme -->
+                            <div class="w-full bg-zinc-950 rounded-full h-1.5 mb-1 border border-zinc-800 overflow-hidden">
+                                <div class="bg-green-500 h-1.5 rounded-full transition-all duration-500 ease-out" style="width: ${progress}%"></div>
+                            </div>
+                            <div class="flex justify-between text-[10px] text-zinc-400 font-medium">
+                                <span>${watchedEps} / ${totalEps > 0 ? totalEps : '?'} böl.</span>
+                                <span>%${progress}</span>
+                            </div>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+            updateStats();
+        }
+
+        // --- TVMaze Arama ve API İşlemleri ---
+        function searchTVMaze() {
+            const query = document.getElementById('series-search').value;
+            const loader = document.getElementById('search-loader');
+            const resultsDiv = document.getElementById('search-results');
+            
+            clearTimeout(searchTimeout);
+            
+            if (query.length < 3) {
+                resultsDiv.classList.add('hidden');
+                loader.classList.add('hidden');
+                return;
+            }
+
+            loader.classList.remove('hidden');
+
+            searchTimeout = setTimeout(async () => {
+                try {
+                    const response = await fetch(`https://api.tvmaze.com/search/shows?q=${encodeURIComponent(query)}`);
+                    const data = await response.json();
+                    
+                    resultsDiv.innerHTML = '';
+                    
+                    if (data.length === 0) {
+                        resultsDiv.innerHTML = '<div class="p-4 text-center text-zinc-400 text-sm">Dizi bulunamadı.</div>';
+                    } else {
+                        data.slice(0, 5).forEach(item => {
+                            const show = item.show;
+                            const posterUrl = show.image ? show.image.medium : '';
+                            const year = show.premiered ? show.premiered.substring(0,4) : '';
+                            
+                            const div = document.createElement('div');
+                            div.className = 'flex items-center gap-3 p-3 hover:bg-zinc-700 cursor-pointer border-b border-zinc-700/50 last:border-0 transition-colors';
+                            div.onclick = () => selectTVMazeShow(show);
+                            
+                            div.innerHTML = `
+                                <img src="${posterUrl || 'https://placehold.co/40x60/18181b/52525b?text=Yok'}" class="w-10 h-14 object-cover rounded bg-zinc-900 border border-zinc-700">
+                                <div>
+                                    <div class="font-semibold text-white text-sm">${show.name}</div>
+                                    <div class="text-xs text-zinc-400">${year} ${show.network ? '• ' + show.network.name : ''}</div>
+                                </div>
+                            `;
+                            resultsDiv.appendChild(div);
+                        });
+                    }
+                    resultsDiv.classList.remove('hidden');
+                } catch (error) {
+                    console.error('Arama hatası:', error);
+                } finally {
+                    loader.classList.add('hidden');
+                }
+            }, 500);
+        }
+
+        async function selectTVMazeShow(show) {
+            document.getElementById('search-results').classList.add('hidden');
+            document.getElementById('series-search').value = '';
+            
+            const posterUrl = show.image ? show.image.medium : '';
+            
+            document.getElementById('series-name').value = show.name;
+            document.getElementById('series-poster').value = posterUrl;
+            document.getElementById('tvmaze-id').value = show.id;
+            
+            const preview = document.getElementById('poster-preview');
+            if (posterUrl) {
+                preview.innerHTML = `<img src="${posterUrl}" class="w-full h-full object-cover">`;
+            } else {
+                preview.innerHTML = `<div class="text-zinc-600 flex flex-col items-center"><i class="fa-solid fa-image text-3xl mb-2"></i><span class="text-xs">Afiş Yok</span></div>`;
+            }
+
+            document.getElementById('episodes-info').classList.remove('hidden');
+            
+            // Seçilen veriyi geçici olarak sakla
+            selectedTVMazeData = show;
+        }
+
+        // --- Dizi Ekleme / Düzenleme (Modal Formu) ---
+        function showAddModal() {
+            document.getElementById('add-modal').classList.remove('hidden');
+            document.getElementById('add-modal').classList.add('flex');
+            
+            // Formu sıfırla
+            document.getElementById('edit-id').value = '';
+            document.getElementById('series-search').value = '';
+            document.getElementById('series-name').value = '';
+            document.getElementById('series-poster').value = '';
+            document.getElementById('tvmaze-id').value = '';
+            document.getElementById('series-status').value = 'watching';
+            document.getElementById('series-rating').value = 0;
+            document.getElementById('rating-val').innerText = '0';
+            document.getElementById('poster-preview').innerHTML = '<i class="fa-solid fa-image text-zinc-700 text-3xl"></i>';
+            document.getElementById('episodes-info').classList.add('hidden');
+            document.getElementById('modal-title').innerText = 'Yeni Dizi Ekle';
+            selectedTVMazeData = null;
+        }
+
+        function closeAddModal() {
+            document.getElementById('add-modal').classList.add('hidden');
+            document.getElementById('add-modal').classList.remove('flex');
+        }
+
+        function editSeries(id) {
+            const series = seriesList.find(s => s.id === id);
+            if (!series) return;
+
+            showAddModal();
+            document.getElementById('modal-title').innerText = 'Diziyi Düzenle';
+            
+            document.getElementById('edit-id').value = series.id;
+            document.getElementById('series-name').value = series.name;
+            document.getElementById('series-poster').value = series.poster;
+            document.getElementById('tvmaze-id').value = series.tvmazeId || '';
+            document.getElementById('series-status').value = series.status;
+            
+            const r = series.rating || 0;
+            document.getElementById('series-rating').value = r;
+            document.getElementById('rating-val').innerText = r;
+
+            const preview = document.getElementById('poster-preview');
+            if (series.poster) {
+                preview.innerHTML = `<img src="${series.poster}" class="w-full h-full object-cover">`;
+            } else {
+                preview.innerHTML = `<div class="text-zinc-600 flex flex-col items-center"><i class="fa-solid fa-image text-3xl mb-2"></i><span class="text-xs">Afiş Yok</span></div>`;
+            }
+        }
+
+        async function saveSeriesFromForm() {
+            const editId = document.getElementById('edit-id').value;
+            const name = document.getElementById('series-name').value.trim();
+            
+            if (!name) {
+                alert('Lütfen arama yaparak bir dizi seçin.');
+                return;
+            }
+
+            const poster = document.getElementById('series-poster').value;
+            const tvmazeId = document.getElementById('tvmaze-id').value;
+            let status = document.getElementById('series-status').value;
+            const rating = parseFloat(document.getElementById('series-rating').value);
+
+            let btn = document.querySelector('#add-modal button.bg-green-500');
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Kaydediliyor...';
+            btn.disabled = true;
+
+            try {
+                if (editId) {
+                    // --- Düzenleme Modu ---
+                    const index = seriesList.findIndex(s => s.id === editId);
+                    if (index !== -1) {
+                        seriesList[index].name = name;
+                        seriesList[index].poster = poster;
+                        seriesList[index].status = status;
+                        seriesList[index].rating = rating;
+                        
+                        // Eğer farklı bir dizi seçildiyse bölümleri güncelle
+                        if (tvmazeId && seriesList[index].tvmazeId !== tvmazeId) {
+                            seriesList[index].tvmazeId = tvmazeId;
+                            const episodes = await fetchEpisodesFromTVMaze(tvmazeId);
+                            seriesList[index].episodes = episodes;
+                        }
+                        
+                        // Bitti seçildiyse tüm geçmiş bölümleri izlendi yap
+                        if (status === 'completed' && seriesList[index].episodes) {
+                            const today = new Date();
+                            today.setHours(0,0,0,0);
+                            seriesList[index].episodes.forEach(ep => {
+                                 if(!ep.airstamp || new Date(ep.airstamp) <= today){
+                                     ep.watched = true;
+                                 }
+                            });
+                        }
+                    }
+                    showToast('Dizi başarıyla güncellendi.');
+                } else {
+                    // --- Yeni Ekleme Modu ---
+                    const episodes = tvmazeId ? await fetchEpisodesFromTVMaze(tvmazeId) : [];
+                    
+                    // Eğer eklerken Bitti seçildiyse
+                    if (status === 'completed') {
+                         const today = new Date();
+                         today.setHours(0,0,0,0);
+                         episodes.forEach(ep => {
+                            if(!ep.airstamp || new Date(ep.airstamp) <= today){
+                                ep.watched = true;
+                            }
+                         });
+                    }
+
+                    const newSeries = {
+                        id: generateId(),
+                        tvmazeId: tvmazeId,
+                        name: name,
+                        poster: poster,
+                        status: status,
+                        rating: rating,
+                        createdAt: Date.now(),
+                        episodes: episodes // Bölümler eklendi
+                    };
+                    seriesList.push(newSeries);
+                    showToast('Dizi başarıyla eklendi.');
+                }
+
+                saveToStorage();
+                renderSeries();
+                closeAddModal();
+            } catch (error) {
+                console.error("Kaydetme hatası:", error);
+                alert("Bölümler çekilirken bir hata oluştu. Lütfen tekrar deneyin.");
+            } finally {
+                btn.innerHTML = originalBtnText;
+                btn.disabled = false;
+            }
+        }
+
+        async function fetchEpisodesFromTVMaze(id) {
+            try {
+                const response = await fetch(`https://api.tvmaze.com/shows/${id}/episodes`);
+                const data = await response.json();
+                
+                // Formatla ve temizle
+                return data.map(ep => ({
+                    id: ep.id,
+                    season: ep.season,
+                    number: ep.number,
+                    name: ep.name,
+                    airstamp: ep.airstamp, // Çıkış tarihi için
+                    watched: false,
+                    favorite: false,
+                    rating: 0
+                }));
+            } catch (error) {
+                console.error("Bölümler alınamadı:", error);
+                return [];
+            }
+        }
+
+        function deleteSeries(id) {
+            if (confirm('Bu diziyi silmek istediğinden emin misin?')) {
+                seriesList = seriesList.filter(s => s.id !== id);
+                saveToStorage();
+                renderSeries();
+                showToast('Dizi silindi.', 'info');
+            }
+        }
+
+        // --- BÖLÜM YÖNETİMİ ---
+
+        function openEpisodesModal(seriesId) {
+            const series = seriesList.find(s => s.id === seriesId);
+            if (!series) return;
+            
+            currentlyManagingSeriesId = seriesId;
+            document.getElementById('episodes-modal-title').innerHTML = `
+                <i class="fa-solid fa-list-check text-green-500 mr-1"></i> ${series.name}
+            `;
+            
+            const container = document.getElementById('episodes-list-container');
+            container.innerHTML = '';
+
+            if (!series.episodes || series.episodes.length === 0) {
+                container.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-10 text-zinc-500">
+                        <i class="fa-solid fa-folder-open text-4xl mb-3"></i>
+                        <p>Bu dizi için bölüm verisi bulunamadı.</p>
+                        <button onclick="reFetchEpisodes('${series.id}')" class="mt-4 text-green-500 underline text-sm hover:text-green-400">Yeniden Çekmeyi Dene</button>
+                    </div>`;
+            } else {
+                // Sezonlara göre grupla
+                const seasons = {};
+                series.episodes.forEach(ep => {
+                    if (!seasons[ep.season]) seasons[ep.season] = [];
+                    seasons[ep.season].push(ep);
+                });
+
+                Object.keys(seasons).forEach(seasonNum => {
+                    const eps = seasons[seasonNum];
+                    
+                    const seasonDiv = document.createElement('div');
+                    seasonDiv.className = 'bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden';
+                    
+                    // Sezon Başlığı
+                    const header = document.createElement('div');
+                    header.className = 'bg-zinc-800/50 p-4 flex justify-between items-center cursor-pointer hover:bg-zinc-800 transition-colors group';
+                    
+                    // Sezonun içindeki tüm "çıkmış" bölümler izlenmiş mi kontrolü
+                    const today = new Date();
+                    today.setHours(0,0,0,0);
+                    const pastEps = eps.filter(e => !e.airstamp || new Date(e.airstamp) <= today);
+                    const allPastWatched = pastEps.length > 0 && pastEps.every(e => e.watched);
+
+                    header.innerHTML = `
+                        <div class="flex items-center gap-3 w-full" onclick="toggleAccordion('season-${seasonNum}')">
+                            <i class="fa-solid fa-chevron-down text-zinc-500 transition-transform duration-300" id="icon-season-${seasonNum}"></i>
+                            <h3 class="font-bold text-white">Sezon ${seasonNum}</h3>
+                            <span class="text-xs text-zinc-500 bg-zinc-950 px-2 py-1 rounded-md">${eps.length} Bölüm</span>
+                        </div>
+                        <button onclick="toggleSeason(this, '${series.id}', ${seasonNum})" class="shrink-0 text-xs font-semibold px-3 py-1.5 rounded-lg border transition-colors ${allPastWatched ? 'border-green-900/50 bg-green-900/20 text-green-500' : 'border-zinc-600 text-zinc-400 hover:text-white hover:bg-zinc-700'}" title="Çıkmış tüm bölümleri seç">
+                            ${allPastWatched ? '<i class="fa-solid fa-check"></i> İzledim' : 'Tümünü Seç'}
+                        </button>
+                    `;
+                    seasonDiv.appendChild(header);
+
+                    // Bölümler Listesi (Başlangıçta ilk sezon açık olsun)
+                    const listContainer = document.createElement('div');
+                    listContainer.id = `season-${seasonNum}`;
+                    listContainer.className = `p-2 space-y-1 ${seasonNum === '1' ? 'block' : 'hidden'}`;
+                    
+                    eps.forEach(ep => {
+                        const dateInfo = formatAirDate(ep.airstamp);
+                        const isFuture = dateInfo.isFuture;
+                        const dateHtml = ep.airstamp ? `<span class="text-[10px] font-medium ${isFuture ? 'text-blue-400' : 'text-zinc-500'} block mt-0.5"><i class="fa-regular fa-calendar-days mr-1"></i>${dateInfo.text}</span>` : '';
+
+                        const epDiv = document.createElement('div');
+                        epDiv.className = `flex items-center justify-between p-2.5 rounded-xl transition-all border ${isFuture ? 'opacity-50 bg-zinc-900/30 border-transparent' : 'hover:bg-zinc-800/80 hover:border-zinc-700'} ${ep.watched ? 'bg-green-900/10 border-green-900/30' : 'bg-transparent border-transparent'}`;
+                        
+                        // Favori ve Puanlama Araçları
+                        const actionsHtml = isFuture ? '' : `
+                            <div class="flex items-center gap-2 ml-2">
+                                <button type="button" onclick="toggleEpisodeFavorite(this, '${series.id}', '${ep.id}')" class="text-zinc-600 hover:text-red-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full ${ep.favorite ? 'text-red-500' : ''}" title="Favorilere Ekle">
+                                    <i class="${ep.favorite ? 'fa-solid text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)]' : 'fa-regular'} fa-heart"></i>
+                                </button>
+
+                                <div class="relative group flex items-center h-8">
+                                    <div class="opacity-0 w-0 overflow-hidden group-hover:w-[130px] group-hover:opacity-100 group-hover:mr-2 transition-all duration-300 flex items-center bg-zinc-950 border border-zinc-700 rounded-full h-full px-3">
+                                        <input type="range" min="0" max="10" step="0.5" value="${ep.rating || 0}" 
+                                               oninput="this.nextElementSibling.innerText = this.value"
+                                               onchange="rateEpisode(this, '${series.id}', '${ep.id}', this.value)"
+                                               class="w-full h-1 cursor-pointer rating-slider">
+                                        <span class="text-[10px] font-bold text-yellow-500 ml-2 w-5 text-center">${ep.rating || 0}</span>
+                                    </div>
+                                    <button type="button" class="text-zinc-600 hover:text-yellow-500 transition-colors w-8 h-8 flex items-center justify-center rounded-full ${ep.rating > 0 ? 'text-yellow-500' : ''}" title="Puan Ver">
+                                        <i class="${ep.rating > 0 ? 'fa-solid drop-shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'fa-regular'} fa-star"></i>
+                                    </button>
+                                    ${ep.rating > 0 ? `<span class="rating-badge text-[9px] font-bold text-black absolute -top-1 -right-1 bg-yellow-500 rounded-full px-1.5 py-0.5 leading-none shadow-sm">${ep.rating}</span>` : ''}
+                                </div>
+                            </div>
+                        `;
+
+                        epDiv.innerHTML = `
+                            <label class="flex items-center gap-3 flex-1 min-w-0 ${isFuture ? 'cursor-not-allowed' : 'cursor-pointer'} group">
+                                <div class="relative flex items-center justify-center w-5 h-5 shrink-0">
+                                    <input type="checkbox" class="peer appearance-none w-5 h-5 border-2 border-zinc-600 rounded bg-zinc-900 checked:bg-green-500 checked:border-green-500 transition-colors ${isFuture ? 'opacity-50' : 'group-hover:border-green-500'}" ${ep.watched ? 'checked' : ''} ${isFuture ? 'disabled' : ''} onchange="toggleEpisode(this, '${series.id}', '${ep.id}', this.checked)">
+                                    <i class="fa-solid fa-check absolute text-black text-xs opacity-0 peer-checked:opacity-100 pointer-events-none"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <p class="text-sm font-semibold truncate transition-colors ${ep.watched ? 'text-zinc-500 line-through decoration-green-900/50' : 'text-zinc-200'}">
+                                        <span class="${ep.watched ? 'text-zinc-600' : 'text-zinc-400'} mr-1">${ep.number}.</span> ${ep.name || 'Bölüm ' + ep.number}
+                                    </p>
+                                    ${dateHtml}
+                                </div>
+                            </label>
+                            ${actionsHtml}
+                        `;
+                        listContainer.appendChild(epDiv);
+                    });
+
+                    seasonDiv.appendChild(listContainer);
+                    container.appendChild(seasonDiv);
+                    
+                    // İlk sezon dışındakilerin ikonlarını döndür
+                    if (seasonNum !== '1') {
+                         document.getElementById(`icon-season-${seasonNum}`).classList.add('-rotate-90');
+                    }
+                });
+            }
+
+            document.getElementById('episodes-modal').classList.remove('hidden');
+            document.getElementById('episodes-modal').classList.add('flex');
+        }
+
+        function closeEpisodesModal() {
+            document.getElementById('episodes-modal').classList.add('hidden');
+            document.getElementById('episodes-modal').classList.remove('flex');
+            currentlyManagingSeriesId = null;
+            // Modal kapanınca gridi yenile (ilerlemeler yansısın)
+            renderSeries(); 
+        }
+
+        function toggleAccordion(id) {
+            const el = document.getElementById(id);
+            const icon = document.getElementById('icon-' + id);
+            if (el.classList.contains('hidden')) {
+                el.classList.remove('hidden');
+                icon.classList.remove('-rotate-90');
+            } else {
+                el.classList.add('hidden');
+                icon.classList.add('-rotate-90');
+            }
+        }
+
+        // Tekil Bölüm İşaretleme
+        window.toggleEpisode = function(checkbox, seriesId, epId, isChecked) {
+            const seriesIndex = seriesList.findIndex(s => s.id === seriesId);
+            if(seriesIndex === -1) return;
+
+            // epId API'den string veya number gelebilir, garanti olması için String'e çevirerek kıyasla
+            const epIndex = seriesList[seriesIndex].episodes.findIndex(e => String(e.id) === String(epId));
+            
+            if(epIndex !== -1) {
+                seriesList[seriesIndex].episodes[epIndex].watched = isChecked;
+                saveToStorage();
+                checkAutoCompleteStatus(seriesIndex);
+
+                // UI Güncelleme (Tüm listeyi render etmeden sadece o satırı değiştirerek performansı artırıyoruz)
+                const label = checkbox.closest('label');
+                const row = label.parentElement;
+                const titleP = label.querySelector('p');
+                const numSpan = titleP.querySelector('span');
+
+                if (isChecked) {
+                    row.classList.add('bg-green-900/10', 'border-green-900/30');
+                    row.classList.remove('bg-transparent', 'border-transparent', 'hover:bg-zinc-800/80', 'hover:border-zinc-700');
+                    titleP.classList.add('text-zinc-500', 'line-through', 'decoration-green-900/50');
+                    titleP.classList.remove('text-zinc-200');
+                    numSpan.classList.add('text-zinc-600');
+                    numSpan.classList.remove('text-zinc-400');
+                } else {
+                    row.classList.remove('bg-green-900/10', 'border-green-900/30');
+                    row.classList.add('bg-transparent', 'border-transparent', 'hover:bg-zinc-800/80', 'hover:border-zinc-700');
+                    titleP.classList.remove('text-zinc-500', 'line-through', 'decoration-green-900/50');
+                    titleP.classList.add('text-zinc-200');
+                    numSpan.classList.remove('text-zinc-600');
+                    numSpan.classList.add('text-zinc-400');
+                }
+            }
+        }
+
+        // Tüm Sezonu İşaretleme
+        window.toggleSeason = function(btn, seriesId, seasonNum) {
+            const seriesIndex = seriesList.findIndex(s => s.id === seriesId);
+            if(seriesIndex === -1) return;
+
+            const series = seriesList[seriesIndex];
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            // Bu sezondaki geçmiş bölümleri bul
+            const seasonPastEps = series.episodes.filter(ep => 
+                String(ep.season) === String(seasonNum) && 
+                (!ep.airstamp || new Date(ep.airstamp) <= today)
+            );
+            
+            if(seasonPastEps.length === 0) return;
+
+            // Hepsi izlenmiş mi?
+            const allWatched = seasonPastEps.every(ep => ep.watched);
+            
+            // Durumu Tersine Çevir
+            const newState = !allWatched;
+            
+            seasonPastEps.forEach(ep => {
+                ep.watched = newState;
+            });
+            
+            saveToStorage();
+            checkAutoCompleteStatus(seriesIndex);
+
+            // Modalı tazeleyerek UI yansıtmasını en kolaya indirgiyoruz
+            openEpisodesModal(seriesId);
+        }
+
+        // Bölüm Favori
+        window.toggleEpisodeFavorite = function(btn, seriesId, epId) {
+            const seriesIndex = seriesList.findIndex(s => s.id === seriesId);
+            if(seriesIndex === -1) return;
+            const epIndex = seriesList[seriesIndex].episodes.findIndex(e => String(e.id) === String(epId));
+            
+            if(epIndex !== -1) {
+                const isFav = !seriesList[seriesIndex].episodes[epIndex].favorite;
+                seriesList[seriesIndex].episodes[epIndex].favorite = isFav;
+                saveToStorage();
+                
+                const icon = btn.querySelector('i');
+                if (isFav) {
+                    btn.classList.add('text-red-500');
+                    btn.classList.remove('text-zinc-600');
+                    icon.className = 'fa-solid text-red-500 drop-shadow-[0_0_8px_rgba(239,68,68,0.5)] fa-heart';
+                } else {
+                    btn.classList.remove('text-red-500');
+                    btn.classList.add('text-zinc-600');
+                    icon.className = 'fa-regular fa-heart';
+                }
+            }
+        }
+
+        // Bölüm Puanlama
+        window.rateEpisode = function(input, seriesId, epId, ratingVal) {
+            const seriesIndex = seriesList.findIndex(s => s.id === seriesId);
+            if(seriesIndex === -1) return;
+            const epIndex = seriesList[seriesIndex].episodes.findIndex(e => String(e.id) === String(epId));
+            
+            if(epIndex !== -1) {
+                const val = parseFloat(ratingVal);
+                seriesList[seriesIndex].episodes[epIndex].rating = val;
+                saveToStorage();
+                
+                const groupDiv = input.closest('.group');
+                const btn = groupDiv.querySelector('button');
+                const icon = btn.querySelector('i');
+                
+                const existingBadge = groupDiv.querySelector('.rating-badge');
+                if (existingBadge) existingBadge.remove();
+
+                if (val > 0) {
+                    btn.classList.add('text-yellow-500');
+                    btn.classList.remove('text-zinc-600');
+                    icon.className = 'fa-solid drop-shadow-[0_0_8px_rgba(234,179,8,0.5)] fa-star';
+                    
+                    const badge = document.createElement('span');
+                    badge.className = 'rating-badge text-[9px] font-bold text-black absolute -top-1 -right-1 bg-yellow-500 rounded-full px-1.5 py-0.5 leading-none shadow-sm';
+                    badge.innerText = val;
+                    groupDiv.appendChild(badge);
+                } else {
+                    btn.classList.remove('text-yellow-500');
+                    btn.classList.add('text-zinc-600');
+                    icon.className = 'fa-regular fa-star';
+                }
+            }
+        }
+
+        // Tüm bölümler bittiyse otomatik "completed" statüsüne alma
+        function checkAutoCompleteStatus(seriesIndex) {
+            const series = seriesList[seriesIndex];
+            if (!series.episodes || series.status === 'completed') return;
+
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            const pastEpisodes = series.episodes.filter(ep => !ep.airstamp || new Date(ep.airstamp) <= today);
+            
+            if (pastEpisodes.length > 0) {
+                const watchedPastEps = pastEpisodes.filter(e => e.watched);
+                if (watchedPastEps.length === pastEpisodes.length) {
+                    series.status = 'completed';
+                    saveToStorage();
+                    showToast(`Tebrikler! ${series.name} dizisinin çıkan tüm bölümlerini bitirdiniz. Durum "Bitti" olarak güncellendi.`);
+                }
+            }
+        }
+
+        // Olası API hatası/eksikliği durumunda manuel tekrar veri çekme
+        async function reFetchEpisodes(id) {
+            const seriesIndex = seriesList.findIndex(s => s.id === id);
+            if(seriesIndex !== -1 && seriesList[seriesIndex].tvmazeId) {
+                showToast("Bölümler yeniden çekiliyor...", "info");
+                const episodes = await fetchEpisodesFromTVMaze(seriesList[seriesIndex].tvmazeId);
+                if(episodes.length > 0) {
+                    seriesList[seriesIndex].episodes = episodes;
+                    saveToStorage();
+                    openEpisodesModal(id);
+                    showToast("Bölümler güncellendi.");
+                } else {
+                    showToast("Bölüm bulunamadı.", "error");
+                }
+            }
+        }
+
+    </script>
+</body>
+</html>
