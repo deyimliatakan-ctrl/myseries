@@ -307,6 +307,25 @@
     </div>
 
     <script>
+        // Dizinin yeni bölümüne kaç gün kaldığını hesaplar
+function getDaysUntilNextEpisode(series) {
+    if (!series.episodes || series.episodes.length === 0) return Infinity;
+    
+    const now = new Date();
+    const futureEps = series.episodes.filter(ep => {
+        if (!ep.airstamp) return false;
+        return new Date(ep.airstamp) > now;
+    }).sort((a, b) => new Date(a.airstamp) - new Date(b.airstamp));
+
+    if (futureEps.length > 0) {
+        const nextEp = futureEps[0];
+        const diffTime = Math.abs(new Date(nextEp.airstamp) - now);
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+    
+    // Yeni bölümü olmayan diziler için sonsuz (Infinity) döndür ki en alta gitsinler
+    return Infinity; 
+}
         // Veritabanı State
         let seriesList = JSON.parse(localStorage.getItem('mySeriesData')) || [];
         let currentFilter = 'all';
@@ -340,18 +359,34 @@
             renderSeries();
         }
 
-        // Sıralama fonksiyonu
-        function sortSeriesArray(array) {
-            const sortBy = document.getElementById('sort-select').value;
+        
+        // Güncellenmiş Sıralama fonksiyonu
+function sortSeriesArray(array) {
+    const sortBy = document.getElementById('sort-select').value;
+    
+    return array.sort((a, b) => {
+        // Sadece "İzleniyor" (watching) sekmesindeyken yeni bölümleri üste alma mantığını çalıştır
+        if (currentFilter === 'watching') {
+            const daysA = getDaysUntilNextEpisode(a);
+            const daysB = getDaysUntilNextEpisode(b);
             
-            return array.sort((a, b) => {
-                if (sortBy === 'newest') return (b.dateAdded || 0) - (a.dateAdded || 0);
-                if (sortBy === 'oldest') return (a.dateAdded || 0) - (b.dateAdded || 0);
-                if (sortBy === 'rating_high') return (b.rating || 0) - (a.rating || 0);
-                if (sortBy === 'rating_low') return (a.rating || 0) - (b.rating || 0);
-                return 0;
-            });
+            // Eğer dizilerden en az birinin yeni bölümü varsa, kalan gün sayısına göre sırala
+            if (daysA !== Infinity || daysB !== Infinity) {
+                if (daysA !== daysB) {
+                    return daysA - daysB; // Yeni bölümü daha yakın olan üste çıkar
+                }
+            }
         }
+
+        // Yeni bölüm durumu eşitse (ikisinin de yoksa veya aynı gün geliyorsa) 
+        // ya da başka bir sekmedeysek kullanıcının seçtiği normal sıralamaya devam et
+        if (sortBy === 'newest') return (b.dateAdded || 0) - (a.dateAdded || 0);
+        if (sortBy === 'oldest') return (a.dateAdded || 0) - (b.dateAdded || 0);
+        if (sortBy === 'rating_high') return (b.rating || 0) - (a.rating || 0);
+        if (sortBy === 'rating_low') return (a.rating || 0) - (b.rating || 0);
+        return 0;
+    });
+}
 
         function renderSeries() {
             const grid = document.getElementById('series-grid');
