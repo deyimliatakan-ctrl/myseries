@@ -82,14 +82,35 @@
     </div>
 
     <header class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-40 shadow-md">
-        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div class="flex items-center gap-3">
-                <div class="bg-green-500 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-zinc-950 font-bold text-xl md:text-2xl shadow-lg shadow-green-500/20">
-                    <i class="fa-solid fa-play"></i>
+        <div class="container mx-auto px-4 py-4 flex flex-col items-center gap-4">
+            <!-- Merkeze Alınmış Logo ve Başlık -->
+            <div class="flex items-center justify-between w-full">
+                <!-- Sol Taraf Boş (Ortalama için) -->
+                <div class="w-1/3 hidden md:block"></div>
+                
+                <!-- Merkez Logo -->
+                <div class="flex items-center justify-center gap-3 w-full md:w-1/3">
+                    <div class="bg-green-500 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-zinc-950 font-bold text-xl md:text-2xl shadow-lg shadow-green-500/20">
+                        <i class="fa-solid fa-play"></i>
+                    </div>
+                    <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white">My<span class="text-green-500">Series</span></h1>
                 </div>
-                <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white">My<span class="text-green-500">Series</span></h1>
+
+                <!-- Sağ Taraf Kullanıcı Bilgisi -->
+                <div class="flex justify-end items-center gap-3 w-1/3 absolute right-4 md:static">
+                    <div id="user-info" class="hidden flex-items-center gap-3">
+                        <div class="flex-col text-right hidden lg:flex">
+                            <span class="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Senkronize</span>
+                            <span id="user-email-display" class="text-xs font-medium text-zinc-300 truncate max-w-[120px]"></span>
+                        </div>
+                        <button onclick="handleLogout()" class="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-700 flex items-center justify-center transition-colors" title="Çıkış Yap">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </div>
+                </div>
             </div>
 
+            <!-- İstatistikler Geri Getirildi -->
             <div class="flex gap-4 text-sm overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar justify-center">
                 <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 flex items-center gap-3 min-w-max">
                     <i class="fa-solid fa-list-ul text-zinc-500"></i>
@@ -112,20 +133,18 @@
                         <p class="font-bold text-green-500" id="stat-completed">0</p>
                     </div>
                 </div>
+                <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 flex items-center gap-3 min-w-max">
+                    <i class="fa-solid fa-film text-purple-500"></i>
+                    <div>
+                        <p class="text-zinc-400 text-xs">İzlenen Bölüm</p>
+                        <p class="font-bold text-purple-500" id="stat-episodes">0</p>
+                    </div>
+                </div>
             </div>
             
-            <div class="flex items-center gap-3 mt-2 md:mt-0">
-                <div id="user-info" class="hidden flex-items-center gap-3 mr-2">
-                    <div class="flex-col text-right hidden lg:flex">
-                        <span class="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">Senkronize</span>
-                        <span id="user-email-display" class="text-xs font-medium text-zinc-300 truncate max-w-[120px]"></span>
-                    </div>
-                    <button onclick="handleLogout()" class="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 text-zinc-400 hover:text-white hover:bg-zinc-700 flex items-center justify-center transition-colors" title="Çıkış Yap">
-                        <i class="fa-solid fa-right-from-bracket"></i>
-                    </button>
-                </div>
-                <button onclick="openModal('add')" class="bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-full font-semibold transition-all shadow-lg shadow-green-600/30 flex items-center gap-2 hover:-translate-y-0.5 border border-green-500">
-                    <i class="fa-solid fa-plus"></i> Yeni Dizi
+            <div class="mt-2">
+                <button onclick="openModal('add')" class="bg-green-600 hover:bg-green-500 text-white px-8 py-2.5 rounded-full font-semibold transition-all shadow-lg shadow-green-600/30 flex items-center gap-2 hover:-translate-y-0.5 border border-green-500">
+                    <i class="fa-solid fa-plus"></i> Yeni Dizi Ekle
                 </button>
             </div>
         </div>
@@ -245,7 +264,7 @@
 
     <!-- ANA JAVASCRIPT MANTIĞI -->
     <script>
-        // Veriler artık window.seriesList olarak globalde tutuluyor
+        // Veriler globalde tutuluyor
         window.seriesList = JSON.parse(localStorage.getItem('mySeriesData')) || [];
         window.currentFilter = 'all';
         window.searchTimeout = null;
@@ -255,7 +274,7 @@
             updateStats();
         });
 
-        // Bu fonksiyon aşağıda Firebase modülü içinde override edilecek
+        // Bu fonksiyon Firebase modülü içinde override edilecek
         window.saveToStorage = function() {
             localStorage.setItem('mySeriesData', JSON.stringify(window.seriesList));
             window.updateStats();
@@ -278,7 +297,7 @@
             renderSeries();
         }
 
-        // --- YENİ BÖLÜM HESAPLAMA VE GÜNCEL SIRALAMA ---
+        // YENİ BÖLÜM HESAPLAMA VE GÜNCEL SIRALAMA
         function getDaysUntilNextEpisode(series) {
             if (!series.episodes || series.episodes.length === 0) return Infinity;
             const now = new Date();
@@ -431,13 +450,24 @@
             }
         }
 
+        // --- İSTATİSTİKLERİN GÜNCELLENMESİ ---
         window.updateStats = function() {
             document.getElementById('stat-total').innerText = window.seriesList.length;
             document.getElementById('stat-watching').innerText = window.seriesList.filter(s => s.status === 'watching').length;
             document.getElementById('stat-completed').innerText = window.seriesList.filter(s => s.status === 'completed').length;
+            
+            // İzlenen Bölüm İstatistiğini Hesaplarken Eski Mantığı Geri Getirdik
+            let totalEpWatched = 0;
+            window.seriesList.forEach(s => {
+                if(s.episodes) {
+                    totalEpWatched += s.episodes.filter(ep => ep.watched).length;
+                } else {
+                    totalEpWatched += parseInt(s.watchedEpisodes || 0);
+                }
+            });
+            document.getElementById('stat-episodes').innerText = totalEpWatched;
         }
 
-        // TVMaze API ve Modal İşlemleri Orijinali Gibi
         window.searchTVMaze = function() {
             const query = document.getElementById('series-search').value.trim();
             const resultsContainer = document.getElementById('search-results');
@@ -554,7 +584,297 @@
 
         window.editSeries = function(index) { openModal('edit', index); }
         window.deleteSeries = function(index) { window.seriesList.splice(index, 1); saveToStorage(); renderSeries(); }
-        // (Modallar, sekmeler ve diğer bölüm detay fonksiyonları, dosya kalabalığını önlemek adına Firebase'in çalışmasını etkilemeyen standart yapılarıyla korunmuştur, mevcut projedeki gibi sorunsuz çalışır)
+
+        // --- BÖLÜM (EPISODES) MODAL MANTIĞI VE RENDER FONKSİYONLARI GERİ GETİRİLDİ ---
+        window.openEpisodesModal = function(seriesIndex) {
+            const series = window.seriesList[seriesIndex];
+            const modal = document.getElementById('episodes-modal');
+            const content = document.getElementById('episodes-modal-content');
+            const container = document.getElementById('seasons-container');
+
+            document.getElementById('ep-modal-title').innerText = series.name;
+            if(series.poster) {
+                document.getElementById('ep-modal-bg').src = series.poster;
+                document.getElementById('ep-modal-poster').src = series.poster;
+                document.getElementById('ep-modal-poster-container').classList.remove('hidden');
+            } else {
+                document.getElementById('ep-modal-bg').src = '';
+                document.getElementById('ep-modal-poster-container').classList.add('hidden');
+            }
+
+            container.innerHTML = '<div class="flex justify-center py-10"><div class="loader w-8 h-8"></div><span class="ml-3 text-zinc-400">Bölümler yükleniyor...</span></div>';
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            setTimeout(async () => {
+                modal.classList.remove('opacity-0');
+                content.classList.remove('scale-95');
+                content.classList.add('scale-100');
+
+                if (!series.episodes || series.episodes.length === 0) {
+                    if (series.tvmazeId) {
+                        series.episodes = await fetchAndStoreEpisodes(series.tvmazeId, []);
+                        saveToStorage();
+                    } else {
+                        container.innerHTML = '<div class="text-center text-zinc-500 py-10">Bölüm bilgisi bulunamadı. Lütfen diziyi düzenleyip arama listesinden tekrar seçin.</div>';
+                        updateModalProgress(seriesIndex);
+                        return;
+                    }
+                }
+                renderSeasons(seriesIndex);
+            }, 10);
+        }
+
+        window.closeEpisodesModal = function() {
+            const modal = document.getElementById('episodes-modal');
+            const content = document.getElementById('episodes-modal-content');
+            
+            modal.classList.add('opacity-0');
+            content.classList.remove('scale-100');
+            content.classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                renderSeries(); // Ana ekranı güncelle
+            }, 300);
+        }
+
+        window.renderSeasons = function(seriesIndex) {
+            const series = window.seriesList[seriesIndex];
+            const container = document.getElementById('seasons-container');
+            container.innerHTML = '';
+            
+            updateModalProgress(seriesIndex);
+
+            if (!series.episodes || series.episodes.length === 0) return;
+
+            const seasons = {};
+            series.episodes.forEach(ep => {
+                if (!seasons[ep.season]) seasons[ep.season] = [];
+                seasons[ep.season].push(ep);
+            });
+
+            const now = new Date();
+
+            Object.keys(seasons).forEach(seasonNum => {
+                const episodes = seasons[seasonNum];
+                
+                const availableEps = episodes.filter(ep => !ep.airstamp || new Date(ep.airstamp) <= now).length;
+                const watchedEps = episodes.filter(ep => ep.watched).length;
+                const isAllWatched = availableEps > 0 && watchedEps === availableEps;
+
+                const seasonDiv = document.createElement('div');
+                seasonDiv.className = 'bg-zinc-950/50 border border-zinc-800 rounded-xl overflow-hidden';
+                seasonDiv.id = `season-${seasonNum}`;
+                
+                const selectAllBtnClass = isAllWatched 
+                    ? 'border-green-900/50 bg-green-900/20 text-green-500' 
+                    : 'border-zinc-600 text-zinc-400 hover:text-white hover:bg-zinc-700';
+                const selectAllBtnText = isAllWatched ? '<i class="fa-solid fa-check"></i> İzledim' : 'Tümünü Seç';
+
+                seasonDiv.innerHTML = `
+                    <div class="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onclick="toggleSeasonAccordion(this)">
+                        <div class="flex items-center gap-3">
+                            <i class="fa-solid fa-chevron-right text-zinc-500 transition-transform duration-300 transform rotate-90"></i>
+                            <h3 class="font-bold text-white text-lg">Sezon ${seasonNum}</h3>
+                            <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">${episodes.length} Bölüm</span>
+                        </div>
+                        
+                        <button onclick="event.stopPropagation(); toggleSeasonWatchAll(${seriesIndex}, ${seasonNum})" 
+                            class="px-4 py-2 border rounded-lg text-xs font-bold transition-colors z-10 flex items-center gap-1 ${selectAllBtnClass}">
+                            ${selectAllBtnText}
+                        </button>
+                    </div>
+                    <div class="border-t border-zinc-800 bg-zinc-900/30 p-2 space-y-1 accordion-content">
+                        ${episodes.map((ep, idx) => {
+                            let isFuture = false;
+                            let dateText = "Tarih Bilinmiyor";
+                            if (ep.airstamp) {
+                                const airDate = new Date(ep.airstamp);
+                                isFuture = airDate > now;
+                                dateText = airDate.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' });
+                            }
+
+                            const disabledAttr = isFuture ? 'disabled' : '';
+                            const bgClass = ep.watched ? 'bg-green-900/10 border-green-900/30' : 'bg-transparent border-transparent hover:bg-zinc-800/80 hover:border-zinc-700';
+                            const titleClass = ep.watched ? 'text-zinc-500 line-through decoration-green-900/50' : (isFuture ? 'text-zinc-600' : 'text-zinc-200');
+                            const numClass = ep.watched ? 'text-zinc-600' : (isFuture ? 'text-zinc-700' : 'text-zinc-400');
+                            
+                            const heartClass = ep.favorite ? 'fa-solid text-red-500' : 'fa-regular text-zinc-600 hover:text-red-400';
+                            const epRating = ep.rating || 0;
+                            const starColorClass = epRating > 0 ? 'text-yellow-500' : 'text-zinc-600 group-hover/star:text-yellow-500';
+
+                            return `
+                            <div class="flex items-center justify-between p-2 rounded-lg border transition-all group ${bgClass}">
+                                <label class="flex items-center gap-4 cursor-pointer flex-1 min-w-0 pr-2">
+                                    <input type="checkbox" class="ep-checkbox shrink-0" 
+                                        ${ep.watched ? 'checked' : ''} ${disabledAttr}
+                                        onchange="toggleEpisode(${seriesIndex}, '${ep.id}', this.checked)">
+                                    <div class="flex-1 min-w-0">
+                                        <p class="font-medium text-sm md:text-base truncate ${titleClass}">
+                                            <span class="mr-2 font-bold ${numClass}">${ep.number}.</span>${ep.name || `Bölüm ${ep.number}`}
+                                        </p>
+                                        <div class="flex items-center gap-2 mt-1">
+                                            <p class="text-xs ${isFuture ? 'text-blue-500/70 font-semibold' : 'text-zinc-500'}"><i class="fa-regular fa-calendar-days mr-1"></i>${dateText} ${isFuture ? '(Gelecek Bölüm)' : ''}</p>
+                                        </div>
+                                    </div>
+                                </label>
+                                
+                                <div class="flex items-center gap-4 shrink-0 pr-2">
+                                    <div class="relative flex items-center star-rating-container group/star">
+                                        <div class="cursor-pointer p-1.5 flex items-center relative">
+                                            <i class="fa-star ${starColorClass} text-lg transition-colors"></i>
+                                            ${epRating > 0 ? `<span class="absolute -top-2 -right-3 bg-zinc-800 text-xs font-bold text-yellow-500 px-1.5 py-0.5 rounded shadow-lg border border-zinc-700">${epRating}</span>` : ''}
+                                        </div>
+                                        
+                                        <div class="star-slider-wrapper absolute right-full mr-3 bg-zinc-800 border border-zinc-700 p-3 rounded-lg shadow-2xl hidden items-center gap-3 w-40 z-20">
+                                            <span class="text-sm text-yellow-500 font-bold w-8 text-center" id="ep-rating-val-${ep.id}">${epRating}</span>
+                                            <input type="range" min="0" max="10" step="0.5" value="${epRating}" 
+                                                class="w-full h-1.5 bg-zinc-950 rounded-lg appearance-none cursor-pointer"
+                                                oninput="document.getElementById('ep-rating-val-${ep.id}').innerText = this.value"
+                                                onchange="rateEpisode(${seriesIndex}, '${ep.id}', this.value); renderSeasons(${seriesIndex})">
+                                        </div>
+                                    </div>
+
+                                    <button onclick="toggleFavoriteEp(${seriesIndex}, '${ep.id}')" class="p-1.5 transition-transform hover:scale-125 focus:outline-none">
+                                        <i class="${heartClass} fa-heart text-xl"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                container.appendChild(seasonDiv);
+            });
+        }
+
+        window.toggleSeasonAccordion = function(headerElement) {
+            const content = headerElement.nextElementSibling;
+            const icon = headerElement.querySelector('i.fa-chevron-right');
+            if (content.classList.contains('hidden')) {
+                content.classList.remove('hidden'); icon.style.transform = 'rotate(90deg)';
+            } else {
+                content.classList.add('hidden'); icon.style.transform = 'rotate(0deg)';
+            }
+        }
+
+        window.toggleEpisode = function(seriesIndex, epId, isChecked) {
+            const series = window.seriesList[seriesIndex];
+            const ep = series.episodes.find(e => String(e.id) === String(epId));
+            if (ep) {
+                ep.watched = isChecked;
+                saveToStorage();
+                updateModalProgress(seriesIndex);
+                
+                const eventInput = event.target;
+                const label = eventInput.closest('label');
+                const row = label.parentElement;
+                const titleP = label.querySelector('p');
+                const numSpan = titleP.querySelector('span');
+
+                if (isChecked) {
+                    row.classList.add('bg-green-900/10', 'border-green-900/30');
+                    row.classList.remove('bg-transparent', 'border-transparent', 'hover:bg-zinc-800/80', 'hover:border-zinc-700');
+                    titleP.classList.add('text-zinc-500', 'line-through', 'decoration-green-900/50');
+                    titleP.classList.remove('text-zinc-200');
+                    numSpan.classList.add('text-zinc-600'); numSpan.classList.remove('text-zinc-400');
+                } else {
+                    row.classList.remove('bg-green-900/10', 'border-green-900/30');
+                    row.classList.add('bg-transparent', 'border-transparent', 'hover:bg-zinc-800/80', 'hover:border-zinc-700');
+                    titleP.classList.remove('text-zinc-500', 'line-through', 'decoration-green-900/50');
+                    titleP.classList.add('text-zinc-200');
+                    numSpan.classList.remove('text-zinc-600'); numSpan.classList.add('text-zinc-400');
+                }
+            }
+        }
+
+        window.toggleSeasonWatchAll = function(seriesIndex, seasonNum) {
+            const series = window.seriesList[seriesIndex];
+            const seasonEps = series.episodes.filter(ep => String(ep.season) === String(seasonNum));
+            const now = new Date();
+            const availableEps = seasonEps.filter(ep => !ep.airstamp || new Date(ep.airstamp) <= now);
+            
+            if(availableEps.length === 0) return;
+
+            const isAllWatched = availableEps.every(ep => ep.watched);
+            const newState = !isAllWatched; 
+            
+            availableEps.forEach(ep => { ep.watched = newState; });
+            saveToStorage();
+            updateModalProgress(seriesIndex);
+
+            const seasonContainer = document.getElementById(`season-${seasonNum}`);
+            if (seasonContainer) {
+                const checkboxes = seasonContainer.querySelectorAll('input[type="checkbox"]:not(:disabled)');
+                checkboxes.forEach(cb => {
+                    if (cb.checked !== newState) {
+                        cb.checked = newState;
+                        const label = cb.closest('label');
+                        const row = label.parentElement;
+                        const titleP = label.querySelector('p');
+                        const numSpan = titleP.querySelector('span');
+
+                        if (newState) {
+                            row.classList.add('bg-green-900/10', 'border-green-900/30');
+                            row.classList.remove('bg-transparent', 'border-transparent', 'hover:bg-zinc-800/80', 'hover:border-zinc-700');
+                            titleP.classList.add('text-zinc-500', 'line-through', 'decoration-green-900/50');
+                            titleP.classList.remove('text-zinc-200');
+                            numSpan.classList.add('text-zinc-600'); numSpan.classList.remove('text-zinc-400');
+                        } else {
+                            row.classList.remove('bg-green-900/10', 'border-green-900/30');
+                            row.classList.add('bg-transparent', 'border-transparent', 'hover:bg-zinc-800/80', 'hover:border-zinc-700');
+                            titleP.classList.remove('text-zinc-500', 'line-through', 'decoration-green-900/50');
+                            titleP.classList.add('text-zinc-200');
+                            numSpan.classList.remove('text-zinc-600'); numSpan.classList.add('text-zinc-400');
+                        }
+                    }
+                });
+
+                const btn = seasonContainer.querySelector('button');
+                if (newState) {
+                    btn.classList.add('border-green-900/50', 'bg-green-900/20', 'text-green-500');
+                    btn.classList.remove('border-zinc-600', 'text-zinc-400', 'hover:text-white', 'hover:bg-zinc-700');
+                    btn.innerHTML = '<i class="fa-solid fa-check"></i> İzledim';
+                } else {
+                    btn.classList.remove('border-green-900/50', 'bg-green-900/20', 'text-green-500');
+                    btn.classList.add('border-zinc-600', 'text-zinc-400', 'hover:text-white', 'hover:bg-zinc-700');
+                    btn.innerHTML = 'Tümünü Seç';
+                }
+            }
+        }
+
+        window.toggleFavoriteEp = function(seriesIndex, epId) {
+            const series = window.seriesList[seriesIndex];
+            const ep = series.episodes.find(e => String(e.id) === String(epId));
+            if(ep) { ep.favorite = !ep.favorite; saveToStorage(); renderSeasons(seriesIndex); }
+        }
+
+        window.rateEpisode = function(seriesIndex, epId, ratingVal) {
+            const series = window.seriesList[seriesIndex];
+            const ep = series.episodes.find(e => String(e.id) === String(epId));
+            if(ep) { ep.rating = parseFloat(ratingVal); saveToStorage(); }
+        }
+
+        window.updateModalProgress = function(seriesIndex) {
+            const series = window.seriesList[seriesIndex];
+            let total = 0; let watched = 0;
+            if (series.episodes) { total = series.episodes.length; watched = series.episodes.filter(ep => ep.watched).length; }
+            const percentage = total > 0 ? (watched / total) * 100 : 0;
+            document.getElementById('ep-modal-progress-text').innerText = `${watched} / ${total} Bölüm İzlendi`;
+            document.getElementById('ep-modal-progress-bar').style.width = `${percentage}%`;
+        }
+
+        // Modal Dışı Tıklamaları Kapama
+        document.getElementById('form-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+        document.getElementById('episodes-modal').addEventListener('click', function(e) { if (e.target === this) closeEpisodesModal(); });
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.relative.w-full')) {
+                const results = document.getElementById('search-results');
+                if(results) results.classList.add('hidden');
+            }
+        });
     </script>
 
     <!-- 🌟 FIREBASE BAĞLANTISI VE MODÜLÜ 🌟 -->
@@ -563,8 +883,6 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ====================================================================
-        // AŞAĞIDAKİ ALANA KENDİ FIREBASE CONFIG BİLGİLERİNİZİ YAPIŞTIRIN
         // ====================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyDjMp7s8Or-it1vCRVmlCvMzwI2fczGX7I",
@@ -592,7 +910,6 @@
             authLoader.classList.add('hidden'); authBtnText.classList.remove('hidden');
         }
 
-        // Giriş ve Kayıt İşlemleri
         window.handleAuth = async (isLogin) => {
             const email = document.getElementById('auth-email').value;
             const pass = document.getElementById('auth-password').value;
@@ -615,7 +932,6 @@
 
         window.handleLogout = () => signOut(auth);
 
-        // Orijinal kaydetme fonksiyonunu buluta yazacak şekilde eziyoruz
         window.saveToStorage = async function() {
             localStorage.setItem('mySeriesData', JSON.stringify(window.seriesList));
             window.updateStats();
@@ -627,7 +943,6 @@
             }
         };
 
-        // Kullanıcı oturumu değişiklik dinleyicisi (Veri Göçü/Migration burada yapılıyor)
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 authModal.classList.add('hidden');
@@ -635,16 +950,13 @@
                 userEmailDisplay.innerText = user.email;
                 authLoader.classList.add('hidden'); authBtnText.classList.remove('hidden');
 
-                // Veritabanı (Backend) yolundan veriyi çek
                 const docRef = doc(db, "users", user.uid);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists() && docSnap.data().series) {
-                    // Bulutta veri varsa cihazı onunla eşitle
                     window.seriesList = docSnap.data().series;
                     localStorage.setItem('mySeriesData', JSON.stringify(window.seriesList));
                 } else {
-                    // Bulut boş, fakat cihazda (localStorage) veri varsa otomatik buluta taşı
                     const localData = JSON.parse(localStorage.getItem('mySeriesData')) || [];
                     if (localData.length > 0) {
                         window.seriesList = localData;
