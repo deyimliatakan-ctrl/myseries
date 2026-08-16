@@ -33,7 +33,6 @@
         }
         .ep-checkbox:disabled { border-color: #27272a; background-color: #18181b; cursor: not-allowed; opacity: 0.5; }
         
-        .star-rating-container:hover .star-slider-wrapper { display: flex; opacity: 1; }
         input[type=range] { -webkit-appearance: none; background: transparent; }
         input[type=range]::-webkit-slider-thumb {
             -webkit-appearance: none; height: 16px; width: 16px; border-radius: 50%;
@@ -83,12 +82,9 @@
 
     <header class="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-40 shadow-md">
         <div class="container mx-auto px-4 py-4 flex flex-col items-center gap-4">
-            <!-- Merkeze Alınmış Logo ve Başlık -->
             <div class="flex items-center justify-between w-full">
-                <!-- Sol Taraf Boş (Ortalama için) -->
                 <div class="w-1/3 hidden md:block"></div>
                 
-                <!-- Merkez Logo -->
                 <div class="flex items-center justify-center gap-3 w-full md:w-1/3">
                     <div class="bg-green-500 w-10 h-10 md:w-12 md:h-12 rounded-xl flex items-center justify-center text-zinc-950 font-bold text-xl md:text-2xl shadow-lg shadow-green-500/20">
                         <i class="fa-solid fa-play"></i>
@@ -96,7 +92,6 @@
                     <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-white">My<span class="text-green-500">Series</span></h1>
                 </div>
 
-                <!-- Sağ Taraf Kullanıcı Bilgisi -->
                 <div class="flex justify-end items-center gap-3 w-1/3 absolute right-4 md:static">
                     <div id="user-info" class="hidden flex-items-center gap-3">
                         <div class="flex-col text-right hidden lg:flex">
@@ -110,7 +105,6 @@
                 </div>
             </div>
 
-            <!-- İstatistikler Geri Getirildi -->
             <div class="flex gap-4 text-sm overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar justify-center">
                 <div class="bg-zinc-950 border border-zinc-800 rounded-lg px-4 py-2 flex items-center gap-3 min-w-max">
                     <i class="fa-solid fa-list-ul text-zinc-500"></i>
@@ -264,7 +258,6 @@
 
     <!-- ANA JAVASCRIPT MANTIĞI -->
     <script>
-        // Veriler globalde tutuluyor
         window.seriesList = JSON.parse(localStorage.getItem('mySeriesData')) || [];
         window.currentFilter = 'all';
         window.searchTimeout = null;
@@ -274,7 +267,6 @@
             updateStats();
         });
 
-        // Bu fonksiyon Firebase modülü içinde override edilecek
         window.saveToStorage = function() {
             localStorage.setItem('mySeriesData', JSON.stringify(window.seriesList));
             window.updateStats();
@@ -297,7 +289,6 @@
             renderSeries();
         }
 
-        // YENİ BÖLÜM HESAPLAMA VE GÜNCEL SIRALAMA
         function getDaysUntilNextEpisode(series) {
             if (!series.episodes || series.episodes.length === 0) return Infinity;
             const now = new Date();
@@ -339,8 +330,8 @@
             const emptyDesc = document.getElementById('empty-state-desc');
             grid.innerHTML = '';
 
+            let favEpisodes = [];
             if (window.currentFilter === 'favorites') {
-                let favEpisodes = [];
                 window.seriesList.forEach((series, seriesIndex) => {
                     if (series.episodes) {
                         series.episodes.forEach(ep => {
@@ -348,47 +339,29 @@
                         });
                     }
                 });
-
-                if (favEpisodes.length === 0) {
-                    emptyTitle.innerText = 'Favori bölümün yok';
-                    emptyDesc.innerText = 'Dizilerin bölümlerini incelerken kalp ikonuna tıklayarak sevdiğin bölümleri favorilerine ekleyebilirsin.';
-                    emptyState.classList.remove('hidden');
-                } else {
-                    emptyState.classList.add('hidden');
-                    favEpisodes.sort((a, b) => (b.ep.rating || 0) - (a.ep.rating || 0));
-                    favEpisodes.forEach(item => {
-                        const ep = item.ep; const series = item.series; const epRating = ep.rating || 0;
-                        const card = document.createElement('div');
-                        card.className = 'bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 transition-all hover:border-zinc-700 hover:shadow-xl hover:shadow-zinc-900/50 flex flex-col group relative';
-                        const ratingHtml = epRating > 0 ? `<div class="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-md text-yellow-500 text-xs font-bold px-2 py-1 rounded shadow-lg border border-zinc-700 z-10 flex items-center gap-1"><i class="fa-solid fa-star"></i> ${epRating}</div>` : '';
-                        card.innerHTML = `
-                            <div class="relative aspect-[2/3] w-full bg-zinc-950">
-                                ${ratingHtml}
-                                <div class="absolute top-2 left-2 bg-zinc-950/80 backdrop-blur-md text-red-500 text-xs font-bold w-8 h-8 flex items-center justify-center rounded-full shadow-lg border border-zinc-700 z-10"><i class="fa-solid fa-heart"></i></div>
-                                ${series.poster ? `<img src="${series.poster}" class="w-full h-full object-cover opacity-70 group-hover:opacity-40 transition-opacity">` : `<div class="w-full h-full flex flex-col items-center justify-center text-zinc-700"><i class="fa-solid fa-image text-3xl mb-2"></i></div>`}
-                                <div class="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 p-4">
-                                    <button onclick="openEpisodesModal(${item.seriesIndex})" class="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-2 rounded-lg text-sm shadow-lg border border-green-500"><i class="fa-solid fa-list-check mr-1"></i> Diziyi Gör</button>
-                                </div>
-                            </div>
-                            <div class="p-3 flex-1 flex flex-col justify-center">
-                                <p class="text-xs text-green-500 font-bold mb-1 truncate">${series.name}</p>
-                                <h3 class="font-bold text-white text-sm line-clamp-2">${ep.season}. Sezon ${ep.number}. Bölüm<br><span class="text-zinc-400 font-normal mt-0.5 inline-block line-clamp-1">${ep.name || ''}</span></h3>
-                            </div>`;
-                        grid.appendChild(card);
-                    });
-                }
-                return;
             }
 
-            emptyTitle.innerText = 'Buralar çok ıssız';
-            emptyDesc.innerText = 'Henüz bu kategoride hiç dizin yok. Hemen yeni bir dizi aratarak takip etmeye başla.';
-            let filteredList = window.currentFilter === 'all' ? [...window.seriesList] : window.seriesList.filter(s => s.status === window.currentFilter);
+            let filteredList = window.currentFilter === 'all' 
+                ? [...window.seriesList] 
+                : window.currentFilter === 'favorites' 
+                    ? window.seriesList.filter(s => s.favorite)
+                    : window.seriesList.filter(s => s.status === window.currentFilter);
+            
             filteredList = sortSeriesArray(filteredList);
 
-            if (filteredList.length === 0) {
+            if (filteredList.length === 0 && favEpisodes.length === 0) {
                 emptyState.classList.remove('hidden');
+                if (window.currentFilter === 'favorites') {
+                    emptyTitle.innerText = 'Favori dizin veya bölümün yok';
+                    emptyDesc.innerText = 'Dizileri veya bölümlerini incelerken kalp ikonuna tıklayarak sevdiğin içerikleri favorilerine ekleyebilirsin.';
+                } else {
+                    emptyTitle.innerText = 'Buralar çok ıssız';
+                    emptyDesc.innerText = 'Henüz bu kategoride hiç dizin yok. Hemen yeni bir dizi aratarak takip etmeye başla.';
+                }
             } else {
                 emptyState.classList.add('hidden');
+                
+                // 1. DİZİLERİ RENDER ET (Normal veya Favori Diziler)
                 filteredList.forEach((series) => {
                     const originalIndex = window.seriesList.findIndex(s => s.id === series.id);
                     let totalWatched = 0; let totalEpisodes = 0; let nextEp = null; const now = new Date();
@@ -422,13 +395,21 @@
                         nextEpBadge = `<div class="absolute top-2 left-2 bg-blue-600/90 backdrop-blur-sm text-white text-[10px] font-bold px-2 py-1 rounded shadow-lg z-10 animate-pulse border border-blue-400">${text}</div>`;
                     }
 
-                    const ratingHtml = series.rating > 0 ? `<div class="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-md text-yellow-500 text-xs font-bold px-1.5 py-0.5 rounded flex items-center gap-1 border border-zinc-700 shadow-lg z-10"><i class="fa-solid fa-star"></i> ${series.rating}</div>` : '';
+                    // Diziler için Puan ve Kalp (Favori) Rozetleri
+                    const topActionsHtml = `
+                    <div class="absolute top-2 right-2 flex items-center gap-1.5 z-10">
+                        ${series.rating > 0 ? `<div class="bg-zinc-950/80 backdrop-blur-md text-yellow-500 text-xs font-bold px-1.5 py-1 rounded flex items-center gap-1 border border-zinc-700 shadow-lg"><i class="fa-solid fa-star"></i> ${series.rating}</div>` : ''}
+                        <button onclick="event.preventDefault(); event.stopPropagation(); window.toggleFavoriteSeries(${originalIndex})" class="w-7 h-7 bg-zinc-950/80 backdrop-blur-md flex items-center justify-center rounded border border-zinc-700 shadow-lg hover:bg-zinc-800 transition-colors">
+                            <i class="fa-solid fa-heart ${series.favorite ? 'text-red-500' : 'text-zinc-500'} text-xs"></i>
+                        </button>
+                    </div>`;
+
                     const card = document.createElement('div');
                     card.className = 'bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 transition-all hover:border-zinc-700 hover:shadow-xl hover:shadow-zinc-900/50 flex flex-col group relative';
                     
                     card.innerHTML = `
                         <div class="relative aspect-[2/3] w-full bg-zinc-950">
-                            ${nextEpBadge}${ratingHtml}
+                            ${nextEpBadge}${topActionsHtml}
                             ${series.poster ? `<img src="${series.poster}" class="w-full h-full object-cover">` : `<div class="w-full h-full flex flex-col items-center justify-center text-zinc-700"><i class="fa-solid fa-image text-3xl mb-2"></i><span class="text-xs">Görsel Yok</span></div>`}
                             <div class="absolute inset-0 bg-black/70 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 p-4 z-20">
                                 <button onclick="openEpisodesModal(${originalIndex})" class="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-2 rounded-lg text-sm shadow-lg border border-green-500"><i class="fa-solid fa-list-check mr-1"></i> Bölümler</button>
@@ -447,16 +428,44 @@
                         </div>`;
                     grid.appendChild(card);
                 });
+
+                // 2. FAVORİ EKRANINDAYSAK FAVORİ BÖLÜMLERİ AYRI RENDER ET
+                if (window.currentFilter === 'favorites' && favEpisodes.length > 0) {
+                    if (filteredList.length > 0) {
+                        const separator = document.createElement('div');
+                        separator.className = 'col-span-full mt-6 mb-2 border-b border-zinc-800 pb-3';
+                        separator.innerHTML = '<h2 class="text-lg font-bold text-white flex items-center gap-2"><i class="fa-solid fa-list-check text-red-500"></i> Favori Bölümler</h2>';
+                        grid.appendChild(separator);
+                    }
+                    
+                    favEpisodes.forEach(item => {
+                        const ep = item.ep; const series = item.series; 
+                        const card = document.createElement('div');
+                        card.className = 'bg-zinc-900 rounded-xl overflow-hidden border border-zinc-800 transition-all hover:border-zinc-700 hover:shadow-xl hover:shadow-zinc-900/50 flex flex-col group relative';
+                        
+                        card.innerHTML = `
+                            <div class="relative aspect-[2/3] w-full bg-zinc-950">
+                                <div class="absolute top-2 right-2 bg-zinc-950/80 backdrop-blur-md text-red-500 text-xs font-bold w-7 h-7 flex items-center justify-center rounded border border-zinc-700 shadow-lg z-10"><i class="fa-solid fa-heart"></i></div>
+                                ${series.poster ? `<img src="${series.poster}" class="w-full h-full object-cover opacity-70 group-hover:opacity-40 transition-opacity">` : `<div class="w-full h-full flex flex-col items-center justify-center text-zinc-700"><i class="fa-solid fa-image text-3xl mb-2"></i></div>`}
+                                <div class="absolute inset-0 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity z-20 p-4">
+                                    <button onclick="openEpisodesModal(${item.seriesIndex})" class="w-full bg-green-600 hover:bg-green-500 text-white font-medium py-2 rounded-lg text-sm shadow-lg border border-green-500"><i class="fa-solid fa-list-check mr-1"></i> Diziyi Gör</button>
+                                </div>
+                            </div>
+                            <div class="p-3 flex-1 flex flex-col justify-center">
+                                <p class="text-xs text-green-500 font-bold mb-1 truncate">${series.name}</p>
+                                <h3 class="font-bold text-white text-sm line-clamp-2">${ep.season}. Sezon ${ep.number}. Bölüm<br><span class="text-zinc-400 font-normal mt-0.5 inline-block line-clamp-1">${ep.name || ''}</span></h3>
+                            </div>`;
+                        grid.appendChild(card);
+                    });
+                }
             }
         }
 
-        // --- İSTATİSTİKLERİN GÜNCELLENMESİ ---
         window.updateStats = function() {
             document.getElementById('stat-total').innerText = window.seriesList.length;
             document.getElementById('stat-watching').innerText = window.seriesList.filter(s => s.status === 'watching').length;
             document.getElementById('stat-completed').innerText = window.seriesList.filter(s => s.status === 'completed').length;
             
-            // İzlenen Bölüm İstatistiğini Hesaplarken Eski Mantığı Geri Getirdik
             let totalEpWatched = 0;
             window.seriesList.forEach(s => {
                 if(s.episodes) {
@@ -571,7 +580,7 @@
                         }
                     }
                 } else {
-                    const newSeries = { id: Date.now(), name: name, poster: poster, status: status, rating: rating, tvmazeId: tvmazeId, dateAdded: Date.now(), episodes: [] };
+                    const newSeries = { id: Date.now(), name: name, poster: poster, status: status, rating: rating, tvmazeId: tvmazeId, dateAdded: Date.now(), episodes: [], favorite: false };
                     if (tvmazeId) newSeries.episodes = await fetchAndStoreEpisodes(tvmazeId, []);
                     if (status === 'completed' && newSeries.episodes) {
                         newSeries.episodes.forEach(ep => { if(!ep.airstamp || new Date(ep.airstamp) <= new Date()) ep.watched = true; });
@@ -584,8 +593,12 @@
 
         window.editSeries = function(index) { openModal('edit', index); }
         window.deleteSeries = function(index) { window.seriesList.splice(index, 1); saveToStorage(); renderSeries(); }
+        window.toggleFavoriteSeries = function(index) {
+            window.seriesList[index].favorite = !window.seriesList[index].favorite;
+            window.saveToStorage();
+            window.renderSeries();
+        }
 
-        // --- BÖLÜM (EPISODES) MODAL MANTIĞI VE RENDER FONKSİYONLARI GERİ GETİRİLDİ ---
         window.openEpisodesModal = function(seriesIndex) {
             const series = window.seriesList[seriesIndex];
             const modal = document.getElementById('episodes-modal');
@@ -636,7 +649,7 @@
             setTimeout(() => {
                 modal.classList.add('hidden');
                 modal.classList.remove('flex');
-                renderSeries(); // Ana ekranı güncelle
+                renderSeries(); 
             }, 300);
         }
 
@@ -673,10 +686,11 @@
                     : 'border-zinc-600 text-zinc-400 hover:text-white hover:bg-zinc-700';
                 const selectAllBtnText = isAllWatched ? '<i class="fa-solid fa-check"></i> İzledim' : 'Tümünü Seç';
 
+                // Bölümlere puan verme özelliği kaldırıldı, Sezonlar artık kapalı olarak (hidden) başlıyor
                 seasonDiv.innerHTML = `
                     <div class="flex items-center justify-between p-4 cursor-pointer hover:bg-zinc-800/50 transition-colors" onclick="toggleSeasonAccordion(this)">
                         <div class="flex items-center gap-3">
-                            <i class="fa-solid fa-chevron-right text-zinc-500 transition-transform duration-300 transform rotate-90"></i>
+                            <i class="fa-solid fa-chevron-right text-zinc-500 transition-transform duration-300 transform"></i>
                             <h3 class="font-bold text-white text-lg">Sezon ${seasonNum}</h3>
                             <span class="text-xs bg-zinc-800 text-zinc-400 px-2 py-0.5 rounded-full">${episodes.length} Bölüm</span>
                         </div>
@@ -686,7 +700,7 @@
                             ${selectAllBtnText}
                         </button>
                     </div>
-                    <div class="border-t border-zinc-800 bg-zinc-900/30 p-2 space-y-1 accordion-content">
+                    <div class="border-t border-zinc-800 bg-zinc-900/30 p-2 space-y-1 accordion-content hidden">
                         ${episodes.map((ep, idx) => {
                             let isFuture = false;
                             let dateText = "Tarih Bilinmiyor";
@@ -700,10 +714,7 @@
                             const bgClass = ep.watched ? 'bg-green-900/10 border-green-900/30' : 'bg-transparent border-transparent hover:bg-zinc-800/80 hover:border-zinc-700';
                             const titleClass = ep.watched ? 'text-zinc-500 line-through decoration-green-900/50' : (isFuture ? 'text-zinc-600' : 'text-zinc-200');
                             const numClass = ep.watched ? 'text-zinc-600' : (isFuture ? 'text-zinc-700' : 'text-zinc-400');
-                            
                             const heartClass = ep.favorite ? 'fa-solid text-red-500' : 'fa-regular text-zinc-600 hover:text-red-400';
-                            const epRating = ep.rating || 0;
-                            const starColorClass = epRating > 0 ? 'text-yellow-500' : 'text-zinc-600 group-hover/star:text-yellow-500';
 
                             return `
                             <div class="flex items-center justify-between p-2 rounded-lg border transition-all group ${bgClass}">
@@ -722,21 +733,6 @@
                                 </label>
                                 
                                 <div class="flex items-center gap-4 shrink-0 pr-2">
-                                    <div class="relative flex items-center star-rating-container group/star">
-                                        <div class="cursor-pointer p-1.5 flex items-center relative">
-                                            <i class="fa-star ${starColorClass} text-lg transition-colors"></i>
-                                            ${epRating > 0 ? `<span class="absolute -top-2 -right-3 bg-zinc-800 text-xs font-bold text-yellow-500 px-1.5 py-0.5 rounded shadow-lg border border-zinc-700">${epRating}</span>` : ''}
-                                        </div>
-                                        
-                                        <div class="star-slider-wrapper absolute right-full mr-3 bg-zinc-800 border border-zinc-700 p-3 rounded-lg shadow-2xl hidden items-center gap-3 w-40 z-20">
-                                            <span class="text-sm text-yellow-500 font-bold w-8 text-center" id="ep-rating-val-${ep.id}">${epRating}</span>
-                                            <input type="range" min="0" max="10" step="0.5" value="${epRating}" 
-                                                class="w-full h-1.5 bg-zinc-950 rounded-lg appearance-none cursor-pointer"
-                                                oninput="document.getElementById('ep-rating-val-${ep.id}').innerText = this.value"
-                                                onchange="rateEpisode(${seriesIndex}, '${ep.id}', this.value); renderSeasons(${seriesIndex})">
-                                        </div>
-                                    </div>
-
                                     <button onclick="toggleFavoriteEp(${seriesIndex}, '${ep.id}')" class="p-1.5 transition-transform hover:scale-125 focus:outline-none">
                                         <i class="${heartClass} fa-heart text-xl"></i>
                                     </button>
@@ -851,12 +847,6 @@
             if(ep) { ep.favorite = !ep.favorite; saveToStorage(); renderSeasons(seriesIndex); }
         }
 
-        window.rateEpisode = function(seriesIndex, epId, ratingVal) {
-            const series = window.seriesList[seriesIndex];
-            const ep = series.episodes.find(e => String(e.id) === String(epId));
-            if(ep) { ep.rating = parseFloat(ratingVal); saveToStorage(); }
-        }
-
         window.updateModalProgress = function(seriesIndex) {
             const series = window.seriesList[seriesIndex];
             let total = 0; let watched = 0;
@@ -866,7 +856,6 @@
             document.getElementById('ep-modal-progress-bar').style.width = `${percentage}%`;
         }
 
-        // Modal Dışı Tıklamaları Kapama
         document.getElementById('form-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
         document.getElementById('episodes-modal').addEventListener('click', function(e) { if (e.target === this) closeEpisodesModal(); });
         document.addEventListener('click', function(e) {
@@ -883,7 +872,6 @@
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-        // ====================================================================
         const firebaseConfig = {
             apiKey: "AIzaSyDjMp7s8Or-it1vCRVmlCvMzwI2fczGX7I",
             authDomain: "myseries-4833e.firebaseapp.com",
@@ -892,7 +880,6 @@
             messagingSenderId: "77430695702",
             appId: "1:77430695702:web:ad7362f4eee3461cba5237"
         };
-        // ====================================================================
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
